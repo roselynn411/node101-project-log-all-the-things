@@ -1,48 +1,51 @@
 const express = require('express');
 const fs = require('fs');
-const { checkServerIdentity } = require('tls');
 const app = express();
+const csvParser = require('csvtojson');
+const csvFilePath = './log.scv';
 
-app.use((req, res, next) => {
+let log;
+
+const logger = (req, res, next) => {
 // write your logging code here
- let agent = req.headers['user-agent'].replace(",",'');
- let time = new Date();
- let method = req.method;
- let resource = req.path;
- let version = `HTTP/${req.httpVersion}`;
- let status = res.statusCode;
+  // console.log("Logging!");
+  const reqAgent = req.headers['user-agent'].replace(',', '');
+  const reqTime = new Date().toISOString();
+  const reqMethod = req.method;
+  const reqResource = req.url;
+  const reqVersion = `HTTP/${req.httpVersion}`;
+  //currently console.logging as ---> null
+  const reqStatus = 200;
 
- let logger = `${agent},${time.toISOString()},${method},${resource},${version},${status}\n`
- console.log(logger);
- 
- fs.appendFile('log.csv', logger, err => {
-    if (err) throw err 
+  log = `${reqAgent},${reqTime},${reqMethod},${reqResource},${reqVersion},${reqStatus}\n`;
+  // console.log(fs);
+  fs.appendFile("log.scv", log, (err) => {
+    if(err){
       console.log(err);
-    
+    } else {
+      console.log('it works!');
+      log = ``;
+    }
   });
   next();
+};
 
-});
+app.use(logger);
 
-// //Might delete
-// const reqAgent = req.headers['user-agent'].replace(',','');
-
-//Should show ok
 app.get('/', (req, res) => {
 // write your code to respond "ok" here
- res.status(200).send('ok');
+  res.status(200).send('ok');
+  console.log(log.toString());
 });
 
-
-//Endpoint that views log.csv
 app.get('/logs', (req, res) => {
 // write your code to return a json object containing the log data here
- cvs()
-    .fromFile(csvfilePath)
+  csvParser()
+    .fromFile(csvFilePath)
     .then((jsonObj) => {
-        res.send(jsonObj);
-
-    })
+      // currently returning an empty array??
+      res.status(200).send(jsonObj);
+    });
 });
 
 module.exports = app;
